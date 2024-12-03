@@ -1,30 +1,38 @@
 package com.springBlog.BlogCreater.Controller;
 
 import com.springBlog.BlogCreater.Entity.Users;
-import com.springBlog.BlogCreater.Request.LoginRequest;
 import com.springBlog.BlogCreater.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping("/api")
 public class UserController {
 
+
    @Autowired
-   UserService userService;
+   private UserService userService;
 
-   @PostMapping("/addUser")
-   @CrossOrigin(origins = "http://localhost:5173")
-   public Users addUser( @RequestBody Users user ){
+  BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
-      return userService.addUser( user );
+
+   @PreAuthorize( "hasRole('ADMIN')")
+   @GetMapping("/hello")
+   public String sayHello(){
+      return "Hello";
    }
 
-   @PostMapping ( "/loginUser" )
-   @CrossOrigin(origins = "http://localhost:5173")
-   public ResponseEntity<String> loginUser ( @RequestBody LoginRequest loginRequest ) {
-      String token = userService.loginUser( loginRequest);
-      System.out.println(token);
-      return ResponseEntity.ok(token);
+   @PostMapping("/register")
+   public Users register( @RequestBody Users user ){
+      user.setPassword( encoder.encode( user.getPassword() ) );
+      return userService.register( user );
    }
-}
+
+   @PostMapping("/login")
+      public String login( @RequestBody Users user ){
+         return userService.verify(user);
+      }
+   }
+

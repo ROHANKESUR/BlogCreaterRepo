@@ -1,41 +1,36 @@
 package com.springBlog.BlogCreater.Service;
 
 import com.springBlog.BlogCreater.Entity.Users;
+import com.springBlog.BlogCreater.JWT.JwtUtil;
 import com.springBlog.BlogCreater.Repository.UserRepo;
-import com.springBlog.BlogCreater.Request.LoginRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 @Service
 public class UserService {
 
    @Autowired
-   UserRepo userRepo;
+   private UserRepo userRepo;
 
    @Autowired
-   JWTService jwtService;
+   private AuthenticationManager authenticationManager;
 
    @Autowired
-   PasswordEncoder passwordEncoder;
+   private JwtUtil jwtUtil;
 
-   public Users addUser(Users user){
-
-      user.setPassword( passwordEncoder.encode( user.getPassword() ) );
+   public Users register(Users user){
       return userRepo.save( user );
    }
 
-   public String loginUser( LoginRequest loginRequest ){
-
-      Optional<Users> user = userRepo.findById( loginRequest.getUserid() );
-
-      if(user.isPresent() && passwordEncoder.matches( loginRequest.getPassword(),user.get().getPassword() )){
-
-         return jwtService.generateToken( loginRequest.getUserid() );
-      }else {
-         throw new RuntimeException("invalid credentials");
+   public String verify ( Users user ) {
+      Authentication authentication = authenticationManager.authenticate( new UsernamePasswordAuthenticationToken( user.getUsername(),user.getPassword() ) );
+      if(authentication.isAuthenticated()){
+         return jwtUtil.generateToken(user.getUsername());
       }
+
+      return "fail";
    }
 }
